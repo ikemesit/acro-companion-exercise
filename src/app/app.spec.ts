@@ -6,7 +6,7 @@ describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [App],
-      providers: [provideZonelessChangeDetection()]
+      providers: [provideZonelessChangeDetection()],
     }).compileComponents();
   });
 
@@ -16,10 +16,16 @@ describe('App', () => {
     expect(app).toBeTruthy();
   });
 
-  it('should render title', () => {
+  it('should expose the title signal value', () => {
+    const fixture = TestBed.createComponent(App);
+    const app = fixture.componentInstance as unknown as { title: () => string };
+    expect(app.title()).toBe('ngrx-practice');
+  });
+
+  it('should render the router outlet', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, ngrx-practice');
+    expect(compiled.querySelector('router-outlet')).not.toBeNull();
   });
 });

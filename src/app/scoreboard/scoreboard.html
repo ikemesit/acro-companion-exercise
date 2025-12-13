@@ -1,0 +1,25 @@
+<div
+  class="w-6xl h-40 flex flex-row justify-start items-start m-4 border-4 border-gray-600 overflow-hidden"
+>
+  @for (slot of store.selectionSlots(); track slot?.id){
+  <app-selected-score-item
+    [slot]="slot"
+    [isAvailable]="store.availableSlot()?.id === slot?.id"
+    (click)="onSlotClick(slot)"
+  ></app-selected-score-item>
+  }
+
+  <div class="flex-1 h-40 flex flex-col justify-center items-center">
+    <button
+      class="rounded-lg bg-blue-400 text-white p-4 flex justify-center items-center"
+      (click)="onResetClick()"
+    >
+      Reset
+    </button>
+    <span class="text-lg font-bold text-gray-600">{{ store.totalSelectedScores() }}</span>
+  </div>
+</div>
+
+@if (store.availableScores().length > 0) {
+<app-available-scores [availableScores]="store.availableScores()"></app-available-scores>
+}

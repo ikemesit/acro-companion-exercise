@@ -1,0 +1,6 @@
+<div
+  class="w-24 h-40 border-r-2 border-gray-400 flex justify-center items-center text-xl font-bold text-gray-800 cursor-pointer hover:bg-gray-200"
+  [class.bg-green-300]="isAvailable()"
+>
+  {{ slot()?.value }}
+</div>
