@@ -2,6 +2,7 @@ import {
   patchState,
   signalStore,
   withComputed,
+  withHooks,
   withLinkedState,
   withMethods,
   withState,
@@ -9,7 +10,7 @@ import {
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { tapResponse } from '@ngrx/operators';
 import { Score } from '../interfaces/score';
-import { inject } from '@angular/core';
+import { effect, inject } from '@angular/core';
 import { ScoreboardService } from '../services/scoreboard.service';
 import { pipe, switchMap, tap } from 'rxjs';
 import { generateSelectionSlots } from '../utils/utils';
@@ -35,6 +36,24 @@ const initialState: ScoreboardState = {
 
 export const ScoreboardStore = signalStore(
   withState(initialState),
+  withHooks({
+    onInit(store) {
+      const appState = localStorage.getItem('appState');
+      if (appState) patchState(store, JSON.parse(appState));
+
+      effect(() => {
+        const state = {
+          availableScores: store.availableScores(),
+          selectionSlots: store.selectionSlots(),
+          currentSelectedSlot: store.currentSelectedSlot(),
+          lastFilledSlotIndex: store.lastFilledSlotIndex(),
+          isLoading: store.isLoading(),
+          error: store.error(),
+        };
+        localStorage.setItem('appState', JSON.stringify(state));
+      });
+    },
+  }),
   withComputed(({ selectionSlots, availableScores, currentSelectedSlot }) => ({
     totalSelectedScores: () =>
       selectionSlots()
