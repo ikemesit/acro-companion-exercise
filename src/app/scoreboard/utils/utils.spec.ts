@@ -1,7 +1,7 @@
 import { generateSelectionSlots } from './utils';
 
 describe('generateSelectionSlots', () => {
-  it('should generate 10 slots with linked nextSlot pointers', () => {
+  it('should generate 10 slots with linked nextSlot', () => {
     const slots = generateSelectionSlots();
 
     expect(slots.length).toBe(10);

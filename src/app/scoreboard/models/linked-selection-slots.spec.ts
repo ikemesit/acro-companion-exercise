@@ -57,7 +57,7 @@ describe('LinkedSelectionSlots', () => {
     expect(list.start).toBeNull();
     expect(list.end).toBeNull();
 
-    // NOTE: size is intentionally not reset by clear() in the current implementation.
+    // NOTE: size is intentionally not reset by clear().
     expect(list.size).toBe(1);
   });
 });

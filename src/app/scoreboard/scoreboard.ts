@@ -1,20 +1,18 @@
-import { Component, inject, model, ModelSignal, signal, WritableSignal } from '@angular/core';
-import { SelectedScoreItem } from './components/selected-score-item/selected-score-item';
-import { ScoreboardStore } from './stores/scoreboard.store';
+import { Component, inject } from '@angular/core';
 import { AvailableScores } from './components/available-scores/available-scores';
 import { SelectionSlot } from './models/selection-slot';
 import { ScoreSelections } from './components/score-selections/score-selections';
 import { Score } from './interfaces/score';
+import { ScoreboardStateService } from './services/scoreboard-state.service';
 
 @Component({
   selector: 'app-scoreboard',
   imports: [AvailableScores, ScoreSelections],
   templateUrl: './scoreboard.html',
   styleUrl: './scoreboard.scss',
-  providers: [ScoreboardStore],
 })
 export class Scoreboard {
-  readonly store = inject(ScoreboardStore);
+  readonly stateService = inject(ScoreboardStateService);
 
   /**
    * Called when a slot is clicked. If there are available scores, selects the clicked slot.
@@ -22,11 +20,11 @@ export class Scoreboard {
    * @param slot The slot that was clicked.
    */
   onSlotClick(slot: SelectionSlot) {
-    if (this.store.availableScores().length === 0) {
-      this.store.fetchScores();
-      this.store.setCurrentSelectedSlot(slot);
+    if (this.stateService.availableScores().length === 0) {
+      this.stateService.fetchScores();
+      this.stateService.setCurrentSelectedSlot(slot);
     } else {
-      this.store.setCurrentSelectedSlot(slot);
+      this.stateService.setCurrentSelectedSlot(slot);
     }
   }
 
@@ -39,13 +37,13 @@ export class Scoreboard {
    * @param score The score to select.
    */
   onScoreSelect(score: Score) {
-    this.store.selectScore(score);
+    this.stateService.selectScore(score);
   }
 
   /**
    * Resets the scoreboard to its initial state.
    */
   onResetClick() {
-    this.store.resetScoreSelections();
+    this.stateService.resetScoreSelections();
   }
 }

@@ -3,14 +3,14 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { Scoreboard } from './scoreboard';
-import { ScoreboardStore } from './stores/scoreboard.store';
+import { ScoreboardStateService } from './services/scoreboard-state.service';
 import { SelectionSlot } from './models/selection-slot';
 
 describe('Scoreboard', () => {
   let component: Scoreboard;
   let fixture: ComponentFixture<Scoreboard>;
 
-  const createMockStore = (availableScoresCount: number) => {
+  const createMockStateService = (availableScoresCount: number) => {
     const selectionSlots = signal([
       new SelectionSlot({ id: 0, value: null }),
       new SelectionSlot({ id: 1, value: null }),
@@ -24,6 +24,7 @@ describe('Scoreboard', () => {
       fetchScores: jasmine.createSpy('fetchScores'),
       setCurrentSelectedSlot: jasmine.createSpy('setCurrentSelectedSlot'),
       resetScoreSelections: jasmine.createSpy('resetScoreSelections'),
+      selectScore: jasmine.createSpy('selectScore'),
     } as any;
   };
 
@@ -35,7 +36,7 @@ describe('Scoreboard', () => {
   });
 
   it('should create', () => {
-    TestBed.overrideProvider(ScoreboardStore, { useValue: createMockStore(0) });
+    TestBed.overrideProvider(ScoreboardStateService, { useValue: createMockStateService(0) });
 
     fixture = TestBed.createComponent(Scoreboard);
     component = fixture.componentInstance;
@@ -45,8 +46,8 @@ describe('Scoreboard', () => {
   });
 
   it('onSlotClick should fetch scores when none are loaded yet', () => {
-    const store = createMockStore(0);
-    TestBed.overrideProvider(ScoreboardStore, { useValue: store });
+    const stateService = createMockStateService(0);
+    TestBed.overrideProvider(ScoreboardStateService, { useValue: stateService });
 
     fixture = TestBed.createComponent(Scoreboard);
     component = fixture.componentInstance;
@@ -54,13 +55,13 @@ describe('Scoreboard', () => {
     const slot = new SelectionSlot({ id: 1, value: null });
     component.onSlotClick(slot);
 
-    expect(store.fetchScores).toHaveBeenCalled();
-    expect(store.setCurrentSelectedSlot).toHaveBeenCalledWith(slot);
+    expect(stateService.fetchScores).toHaveBeenCalled();
+    expect(stateService.setCurrentSelectedSlot).toHaveBeenCalledWith(slot);
   });
 
   it('onSlotClick should not fetch scores when already loaded', () => {
-    const store = createMockStore(2);
-    TestBed.overrideProvider(ScoreboardStore, { useValue: store });
+    const stateService = createMockStateService(2);
+    TestBed.overrideProvider(ScoreboardStateService, { useValue: stateService });
 
     fixture = TestBed.createComponent(Scoreboard);
     component = fixture.componentInstance;
@@ -68,19 +69,19 @@ describe('Scoreboard', () => {
     const slot = new SelectionSlot({ id: 2, value: null });
     component.onSlotClick(slot);
 
-    expect(store.fetchScores).not.toHaveBeenCalled();
-    expect(store.setCurrentSelectedSlot).toHaveBeenCalledWith(slot);
+    expect(stateService.fetchScores).not.toHaveBeenCalled();
+    expect(stateService.setCurrentSelectedSlot).toHaveBeenCalledWith(slot);
   });
 
   it('onResetClick should reset selections', () => {
-    const store = createMockStore(1);
-    TestBed.overrideProvider(ScoreboardStore, { useValue: store });
+    const stateService = createMockStateService(1);
+    TestBed.overrideProvider(ScoreboardStateService, { useValue: stateService });
 
     fixture = TestBed.createComponent(Scoreboard);
     component = fixture.componentInstance;
 
     component.onResetClick();
 
-    expect(store.resetScoreSelections).toHaveBeenCalled();
+    expect(stateService.resetScoreSelections).toHaveBeenCalled();
   });
 });
