@@ -2,7 +2,7 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { AvailableScores } from './available-scores';
-import { ScoreboardStore } from '../../stores/scoreboard.store';
+import { Score } from '../../interfaces/score';
 
 describe('AvailableScores', () => {
   let component: AvailableScores;
@@ -11,15 +11,7 @@ describe('AvailableScores', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [AvailableScores],
-      providers: [
-        provideZonelessChangeDetection(),
-        {
-          provide: ScoreboardStore,
-          useValue: {
-            selectScore: jasmine.createSpy('selectScore'),
-          },
-        },
-      ],
+      providers: [provideZonelessChangeDetection()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AvailableScores);
@@ -31,20 +23,20 @@ describe('AvailableScores', () => {
     expect(component).toBeTruthy();
   });
 
-  it('selectScore should forward to the store when params are defined', () => {
-    const store = TestBed.inject(ScoreboardStore) as unknown as { selectScore: jasmine.Spy };
+  it('selectScore should emit scoreSelect when score is defined', () => {
+    const score: Score = { id: 1, value: 10, label: 'Ten' };
+    const emitSpy = spyOn(component.scoreSelect, 'emit');
 
-    component.selectScore(10, 1);
+    component.selectScore(score);
 
-    expect(store.selectScore).toHaveBeenCalledWith(10);
+    expect(emitSpy).toHaveBeenCalledWith(score);
   });
 
-  it('selectScore should not call the store when params are undefined', () => {
-    const store = TestBed.inject(ScoreboardStore) as unknown as { selectScore: jasmine.Spy };
+  it('selectScore should not emit when score is undefined', () => {
+    const emitSpy = spyOn(component.scoreSelect, 'emit');
 
-    component.selectScore(undefined as any, 1);
-    component.selectScore(10, undefined as any);
+    component.selectScore(undefined as any);
 
-    expect(store.selectScore).not.toHaveBeenCalled();
+    expect(emitSpy).not.toHaveBeenCalled();
   });
 });

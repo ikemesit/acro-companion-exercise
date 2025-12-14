@@ -1,3 +1,4 @@
+import { Score } from '../interfaces/score';
 import { SelectionSlot } from './selection-slot';
 
 export class LinkedSelectionSlots {
@@ -5,7 +6,7 @@ export class LinkedSelectionSlots {
   end: SelectionSlot | null = null;
   size: number = 0;
 
-  append(id: number, value: number | null): void {
+  append(id: number, value: Score | null): void {
     const newSlot = new SelectionSlot({ id, value });
 
     if (!this.start) {

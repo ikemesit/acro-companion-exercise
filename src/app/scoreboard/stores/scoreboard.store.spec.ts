@@ -4,6 +4,8 @@ import { of, throwError } from 'rxjs';
 
 import { ScoreboardStore } from './scoreboard.store';
 import { ScoreboardService } from '../services/scoreboard.service';
+import { Score } from '../interfaces/score';
+
 describe('ScoreboardStore', () => {
   const createMockService = () => {
     return {
@@ -13,37 +15,44 @@ describe('ScoreboardStore', () => {
 
   const getSlots = (store: any) => store.selectionSlots();
 
+  const makeScore = (value: number): Score => ({ id: value, value, label: String(value) });
+
   describe('linked state: availableSlot', () => {
     it('should return currentSelectedSlot when availableScores is empty', () => {
       const mockService = createMockService();
 
       TestBed.configureTestingModule({
-        providers: [provideZonelessChangeDetection(), { provide: ScoreboardService, useValue: mockService }, ScoreboardStore],
+        providers: [
+          provideZonelessChangeDetection(),
+          { provide: ScoreboardService, useValue: mockService },
+          ScoreboardStore,
+        ],
       });
 
       const store = TestBed.inject(ScoreboardStore);
 
-      // initial state: availableScores empty & currentSelectedSlot null
       expect(store.availableScores().length).toBe(0);
       expect(store.currentSelectedSlot()).toBeNull();
       expect(store.availableSlot()).toBeNull();
 
-      const slot = getSlots(store)[0];
-      store.setCurrentSelectedSlot(slot);
-      expect(store.availableSlot()).toBe(slot);
+      const slot0 = getSlots(store)[0];
+      store.setCurrentSelectedSlot(slot0);
+      expect(store.availableSlot()).toBe(slot0);
     });
 
     it('should return currentSelectedSlot when it is set (and scores are available)', () => {
       const mockService = createMockService();
 
       TestBed.configureTestingModule({
-        providers: [provideZonelessChangeDetection(), { provide: ScoreboardService, useValue: mockService }, ScoreboardStore],
+        providers: [
+          provideZonelessChangeDetection(),
+          { provide: ScoreboardService, useValue: mockService },
+          ScoreboardStore,
+        ],
       });
 
       const store = TestBed.inject(ScoreboardStore);
-
-      // make scores available (so availableSlot uses selectionSlots logic unless currentSelectedSlot set)
-      (store as any).availableScores.set([{ id: 1, value: 10, label: 'Ten' }]);
+      (store as any).availableScores.set([makeScore(10)]);
 
       const slot = getSlots(store)[3];
       store.setCurrentSelectedSlot(slot);
@@ -55,84 +64,100 @@ describe('ScoreboardStore', () => {
       const mockService = createMockService();
 
       TestBed.configureTestingModule({
-        providers: [provideZonelessChangeDetection(), { provide: ScoreboardService, useValue: mockService }, ScoreboardStore],
+        providers: [
+          provideZonelessChangeDetection(),
+          { provide: ScoreboardService, useValue: mockService },
+          ScoreboardStore,
+        ],
       });
 
       const store = TestBed.inject(ScoreboardStore);
-      (store as any).availableScores.set([{ id: 1, value: 10, label: 'Ten' }]);
+      (store as any).availableScores.set([makeScore(10)]);
 
       expect(store.currentSelectedSlot()).toBeNull();
-      expect(store.availableSlot()).toBe(getSlots(store)[0]);
+      expect(store.availableSlot()?.id).toBe(0);
     });
 
     it('should return slot after the last filled slot when last filled is not the final index', () => {
       const mockService = createMockService();
 
       TestBed.configureTestingModule({
-        providers: [provideZonelessChangeDetection(), { provide: ScoreboardService, useValue: mockService }, ScoreboardStore],
+        providers: [
+          provideZonelessChangeDetection(),
+          { provide: ScoreboardService, useValue: mockService },
+          ScoreboardStore,
+        ],
       });
 
       const store = TestBed.inject(ScoreboardStore);
-      (store as any).availableScores.set([{ id: 1, value: 10, label: 'Ten' }]);
+      (store as any).availableScores.set([makeScore(10)]);
 
-      const slots = getSlots(store);
+      // Fill slot 0 and 1 by setting currentSelectedSlot and relying on auto-advance.
+      store.setCurrentSelectedSlot(getSlots(store)[0]);
+      store.selectScore(makeScore(5));
+      store.selectScore(makeScore(7));
 
-      // Fill slot 0 and slot 1 via the store API.
-      store.selectScore(5);
-      store.selectScore(7);
-
-      // The next available slot should now be slot 2.
-      expect(store.availableSlot()).toBe(slots[2]);
+      expect(store.availableSlot()?.id).toBe(2);
     });
 
     it('should return the last slot when the last slot is already filled', () => {
       const mockService = createMockService();
 
       TestBed.configureTestingModule({
-        providers: [provideZonelessChangeDetection(), { provide: ScoreboardService, useValue: mockService }, ScoreboardStore],
+        providers: [
+          provideZonelessChangeDetection(),
+          { provide: ScoreboardService, useValue: mockService },
+          ScoreboardStore,
+        ],
       });
 
       const store = TestBed.inject(ScoreboardStore);
-      (store as any).availableScores.set([{ id: 1, value: 10, label: 'Ten' }]);
+      (store as any).availableScores.set([makeScore(10)]);
 
       const slots = getSlots(store);
-
-      // Force selection into the last slot and fill it.
       const last = slots[slots.length - 1];
+
       store.setCurrentSelectedSlot(last);
-      store.selectScore(99);
+      store.selectScore(makeScore(99));
 
       const available = store.availableSlot();
       expect(available).not.toBeNull();
       expect(available!.id).toBe(9);
-      expect(available!.value).toBe(99);
+      expect(available!.score?.value).toBe(99);
     });
   });
 
   describe('computed: totalSelectedScores', () => {
-    it('should sum selected slot values', () => {
+    it('should sum selected slot score values', () => {
       const mockService = createMockService();
 
       TestBed.configureTestingModule({
-        providers: [provideZonelessChangeDetection(), { provide: ScoreboardService, useValue: mockService }, ScoreboardStore],
+        providers: [
+          provideZonelessChangeDetection(),
+          { provide: ScoreboardService, useValue: mockService },
+          ScoreboardStore,
+        ],
       });
 
       const store = TestBed.inject(ScoreboardStore);
-      (store as any).availableScores.set([{ id: 1, value: 10, label: 'Ten' }]);
+      (store as any).availableScores.set([makeScore(10)]);
 
-      // Use currentSelectedSlot to auto-advance as we select scores.
       store.setCurrentSelectedSlot(getSlots(store)[0]);
-      store.selectScore(1);
-      store.selectScore(2);
+      store.selectScore(makeScore(1));
+      store.selectScore(makeScore(2));
 
       expect(store.totalSelectedScores()).toBe(3);
     });
 
-    it('should be 0 when no slots have values', () => {
+    it('should be 0 when no slots have scores', () => {
       const mockService = createMockService();
 
       TestBed.configureTestingModule({
-        providers: [provideZonelessChangeDetection(), { provide: ScoreboardService, useValue: mockService }, ScoreboardStore],
+        providers: [
+          provideZonelessChangeDetection(),
+          { provide: ScoreboardService, useValue: mockService },
+          ScoreboardStore,
+        ],
       });
 
       const store = TestBed.inject(ScoreboardStore);
@@ -141,11 +166,34 @@ describe('ScoreboardStore', () => {
   });
 
   describe('methods', () => {
+    it('selectScore should no-op when there is no available slot', () => {
+      const mockService = createMockService();
+
+      TestBed.configureTestingModule({
+        providers: [
+          provideZonelessChangeDetection(),
+          { provide: ScoreboardService, useValue: mockService },
+          ScoreboardStore,
+        ],
+      });
+
+      const store = TestBed.inject(ScoreboardStore);
+      expect(store.availableSlot()).toBeNull();
+
+      store.selectScore(makeScore(10));
+
+      expect(store.selectionSlots().every((s) => s.score === null)).toBeTrue();
+    });
+
     it('setCurrentSelectedSlot should update state', () => {
       const mockService = createMockService();
 
       TestBed.configureTestingModule({
-        providers: [provideZonelessChangeDetection(), { provide: ScoreboardService, useValue: mockService }, ScoreboardStore],
+        providers: [
+          provideZonelessChangeDetection(),
+          { provide: ScoreboardService, useValue: mockService },
+          ScoreboardStore,
+        ],
       });
 
       const store = TestBed.inject(ScoreboardStore);
@@ -155,75 +203,93 @@ describe('ScoreboardStore', () => {
       expect(store.currentSelectedSlot()).toBe(slot);
     });
 
-    it('selectScore should set value on availableSlot', () => {
+    it('selectScore should set score on the available slot', () => {
       const mockService = createMockService();
 
       TestBed.configureTestingModule({
-        providers: [provideZonelessChangeDetection(), { provide: ScoreboardService, useValue: mockService }, ScoreboardStore],
+        providers: [
+          provideZonelessChangeDetection(),
+          { provide: ScoreboardService, useValue: mockService },
+          ScoreboardStore,
+        ],
       });
 
       const store = TestBed.inject(ScoreboardStore);
+      (store as any).availableScores.set([makeScore(10)]);
 
-      (store as any).availableScores.set([{ id: 1, value: 10, label: 'Ten' }]);
-      expect(store.availableSlot()).toBe(getSlots(store)[0]);
+      const score = makeScore(10);
+      store.selectScore(score);
 
-      store.selectScore(10);
-
-      expect(getSlots(store)[0].value).toBe(10);
+      expect(getSlots(store)[0].score).toEqual(score);
     });
 
     it('selectScore should advance currentSelectedSlot when it is not null', () => {
       const mockService = createMockService();
 
       TestBed.configureTestingModule({
-        providers: [provideZonelessChangeDetection(), { provide: ScoreboardService, useValue: mockService }, ScoreboardStore],
+        providers: [
+          provideZonelessChangeDetection(),
+          { provide: ScoreboardService, useValue: mockService },
+          ScoreboardStore,
+        ],
       });
 
       const store = TestBed.inject(ScoreboardStore);
-      (store as any).availableScores.set([{ id: 1, value: 10, label: 'Ten' }]);
+      (store as any).availableScores.set([makeScore(10)]);
 
-      const slot = getSlots(store)[0];
-      store.setCurrentSelectedSlot(slot);
+      const slot0 = getSlots(store)[0];
+      store.setCurrentSelectedSlot(slot0);
 
-      store.selectScore(25);
+      store.selectScore(makeScore(25));
 
-      expect(getSlots(store)[0].value).toBe(25);
-      expect(store.currentSelectedSlot()).toBe(slot.nextSlot);
+      expect(getSlots(store)[0].score?.value).toBe(25);
+      expect(store.currentSelectedSlot()).toBe(slot0.nextSlot);
     });
 
     it('resetScoreSelections should restore initial state', () => {
       const mockService = createMockService();
 
       TestBed.configureTestingModule({
-        providers: [provideZonelessChangeDetection(), { provide: ScoreboardService, useValue: mockService }, ScoreboardStore],
+        providers: [
+          provideZonelessChangeDetection(),
+          { provide: ScoreboardService, useValue: mockService },
+          ScoreboardStore,
+        ],
       });
 
       const store = TestBed.inject(ScoreboardStore);
-      (store as any).availableScores.set([{ id: 1, value: 10, label: 'Ten' }]);
+      (store as any).availableScores.set([makeScore(10)]);
       store.setCurrentSelectedSlot(getSlots(store)[0]);
-      store.selectScore(10);
+      store.selectScore(makeScore(10));
 
       expect(store.availableScores().length).toBe(1);
-      expect(getSlots(store)[0].value).toBe(10);
+      expect(getSlots(store)[0].score?.value).toBe(10);
       expect(store.currentSelectedSlot()).not.toBeNull();
 
       store.resetScoreSelections();
 
       expect(store.availableScores().length).toBe(0);
       expect(store.currentSelectedSlot()).toBeNull();
-      expect(store.selectionSlots().every((s) => s.value === null)).toBeTrue();
+      expect(store.isLoading()).toBeFalse();
+      expect(store.error()).toBeNull();
+      expect(store.lastFilledSlotIndex()).toBe(-1);
+      expect(store.selectionSlots().every((s) => s.score === null)).toBeTrue();
     });
   });
 
   describe('fetchScores rxMethod', () => {
-    it('should patch availableScores on success', () => {
+    it('should patch availableScores on success and clear loading', () => {
       const mockService = createMockService();
       mockService.fetchScores = jasmine
         .createSpy('fetchScores')
-        .and.returnValue(of([{ id: 1, value: 10, label: 'Ten' }]));
+        .and.returnValue(of([makeScore(10)]));
 
       TestBed.configureTestingModule({
-        providers: [provideZonelessChangeDetection(), { provide: ScoreboardService, useValue: mockService }, ScoreboardStore],
+        providers: [
+          provideZonelessChangeDetection(),
+          { provide: ScoreboardService, useValue: mockService },
+          ScoreboardStore,
+        ],
       });
 
       const store = TestBed.inject(ScoreboardStore);
@@ -232,26 +298,31 @@ describe('ScoreboardStore', () => {
 
       expect(mockService.fetchScores).toHaveBeenCalled();
       expect(store.availableScores().length).toBe(1);
-      expect(store.availableScores()[0].id).toBe(1);
+      expect(store.isLoading()).toBeFalse();
+      expect(store.error()).toBeNull();
     });
 
-    it('should log errors on failure', () => {
+    it('should patch error on failure and clear loading', () => {
       const mockService = createMockService();
       mockService.fetchScores = jasmine
         .createSpy('fetchScores')
         .and.returnValue(throwError(() => new Error('boom')));
 
       TestBed.configureTestingModule({
-        providers: [provideZonelessChangeDetection(), { provide: ScoreboardService, useValue: mockService }, ScoreboardStore],
+        providers: [
+          provideZonelessChangeDetection(),
+          { provide: ScoreboardService, useValue: mockService },
+          ScoreboardStore,
+        ],
       });
 
       const store = TestBed.inject(ScoreboardStore);
-      const consoleSpy = spyOn(console, 'error');
 
       store.fetchScores();
 
       expect(mockService.fetchScores).toHaveBeenCalled();
-      expect(consoleSpy).toHaveBeenCalled();
+      expect(store.isLoading()).toBeFalse();
+      expect(store.error()).toBe('boom');
     });
   });
 });

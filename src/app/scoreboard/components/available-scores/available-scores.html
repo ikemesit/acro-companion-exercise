@@ -3,8 +3,9 @@
 >
   @for (score of availableScores(); track score?.id) {
   <div
-    class="w-10 h-10 bg-white border-r-2 border-b-2 border-gray-400 flex justify-center items-center text-xl font-bold text-gray-800 cursor-pointer hover:bg-gray-200"
-    (click)="selectScore(score.value, score.id)"
+    class="w-10 h-10 border-r-2 border-b-2 border-gray-400 flex justify-center items-center text-xl font-bold text-gray-800 cursor-pointer hover:bg-gray-200"
+    [class.bg-red-300]="availableSlot()?.score?.id === score?.id"
+    (click)="selectScore(score)"
   >
     {{ score.value }}
   </div>

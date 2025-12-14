@@ -8,7 +8,7 @@ describe('generateSelectionSlots', () => {
 
     for (let i = 0; i < slots.length; i++) {
       expect(slots[i].id).toBe(i);
-      expect(slots[i].value).toBeNull();
+      expect(slots[i].score).toBeNull();
 
       if (i < slots.length - 1) {
         expect(slots[i].nextSlot).toBe(slots[i + 1]);

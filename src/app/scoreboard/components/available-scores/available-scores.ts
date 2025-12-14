@@ -1,6 +1,6 @@
-import { Component, inject, input, InputSignal } from '@angular/core';
-import { ScoreboardStore } from '../../stores/scoreboard.store';
+import { Component, input, InputSignal, output, OutputEmitterRef } from '@angular/core';
 import { Score } from '../../interfaces/score';
+import { SelectionSlot } from '../../models/selection-slot';
 
 @Component({
   selector: 'app-available-scores',
@@ -10,11 +10,18 @@ import { Score } from '../../interfaces/score';
 })
 export class AvailableScores {
   readonly availableScores: InputSignal<Score[] | undefined> = input();
-  readonly scoreboardStore = inject(ScoreboardStore);
+  readonly availableSlot: InputSignal<SelectionSlot | null | undefined> = input();
 
-  selectScore(value: number, id: number): void {
-    if (value !== undefined && id !== undefined) {
-      this.scoreboardStore.selectScore(value);
+  readonly scoreSelect: OutputEmitterRef<Score> = output();
+
+  /**
+   * Selects a score for the current available slot. If the score is undefined,
+   * does not emit the score.
+   * @param value The score to select.
+   */
+  selectScore(value: Score): void {
+    if (value !== undefined) {
+      this.scoreSelect.emit(value);
     }
   }
 }

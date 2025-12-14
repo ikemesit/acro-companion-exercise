@@ -1,10 +1,12 @@
+import { Score } from '../interfaces/score';
+
 export class SelectionSlot {
   id: number;
-  value: number | null;
+  score: Score | null;
   nextSlot: SelectionSlot | null = null;
 
-  constructor(data: { id: number; value: number | null }) {
+  constructor(data: { id: number; value: Score | null }) {
     this.id = data.id;
-    this.value = data.value;
+    this.score = data.value;
   }
 }

@@ -19,12 +19,18 @@ type ScoreboardState = {
   availableScores: Score[];
   selectionSlots: SelectionSlot[];
   currentSelectedSlot: SelectionSlot | null;
+  isLoading: boolean;
+  error: string | null;
+  lastFilledSlotIndex: number;
 };
 
 const initialState: ScoreboardState = {
   availableScores: [],
   selectionSlots: generateSelectionSlots(),
   currentSelectedSlot: null,
+  isLoading: false,
+  error: null,
+  lastFilledSlotIndex: -1,
 };
 
 export const ScoreboardStore = signalStore(
@@ -32,20 +38,17 @@ export const ScoreboardStore = signalStore(
   withComputed(({ selectionSlots, availableScores, currentSelectedSlot }) => ({
     totalSelectedScores: () =>
       selectionSlots()
-        .filter((slot) => slot.value !== null)
-        .map((slot) => slot.value!)
+        .filter((slot) => slot.score !== null)
+        .map((slot) => slot.score?.value!)
         .reduce((a, b) => a + b, 0),
   })),
   withLinkedState(({ selectionSlots, availableScores, currentSelectedSlot }) => ({
     /**
-     * Returns the first available slot in the selection slots array,
-     * starting from the end and moving backwards. If no available slots
-     * are found, returns the first slot in the array. If the current
-     * selected slot is not null, returns the current selected slot.
-     * If the available scores array is empty, returns the current
-     * selected slot.
+     * Returns the available slot to select a score for. If there are no available scores,
+     * returns the current selected slot if it is not null. Otherwise, returns the next
+     * available slot based on the last filled slot index.
      *
-     * @returns The first available slot in the selection slots array.
+     * @returns {SelectionSlot | null} The available slot to select a score for.
      */
     availableSlot: () => {
       if (availableScores().length === 0 || currentSelectedSlot() !== null) {
@@ -55,7 +58,7 @@ export const ScoreboardStore = signalStore(
       let lastFilleSlotIndex;
 
       for (let i = selectionSlots().length - 1; i >= 0; i--) {
-        if (selectionSlots()[i].value !== null) {
+        if (selectionSlots()[i].score !== null) {
           lastFilleSlotIndex = i;
           break;
         }
@@ -73,35 +76,45 @@ export const ScoreboardStore = signalStore(
     setCurrentSelectedSlot(slot: SelectionSlot): void {
       patchState(store, { currentSelectedSlot: slot });
     },
+
     /**
-     * Selects a score for the current available slot. If the current
-     * selected slot is not null, moves the current selected slot to the
-     * next available slot. If the available scores array is empty, does
-     * not update the current selected slot.
-     *
-     * @param value The value of the score to select.
+     * Selects a score for the current available slot. If the score is undefined,
+     * does not emit the score.
+     * @param value The score to select.
      */
-    selectScore(value: number): void {
-      patchState(store, (state) => ({
-        selectionSlots: state.selectionSlots.map((slot) =>
-          slot.id === store.availableSlot()?.id ? { ...slot, value: value } : slot
-        ),
-      }));
-      if (store.currentSelectedSlot() !== null) {
-        patchState(store, { currentSelectedSlot: store.currentSelectedSlot()?.nextSlot });
-      }
+    selectScore(value: Score): void {
+      const slot = store.availableSlot();
+      if (!slot) return;
+
+      patchState(store, (state) => {
+        const slotIndex = state.selectionSlots.findIndex((s) => s.id === slot.id);
+        if (slotIndex === -1) return state;
+
+        const updated = [...state.selectionSlots];
+        updated[slotIndex] = { ...updated[slotIndex], score: value };
+
+        return {
+          selectionSlots: updated,
+          lastFilledSlotIndex: slotIndex,
+          currentSelectedSlot: state.currentSelectedSlot?.nextSlot || null,
+        };
+      });
     },
     resetScoreSelections(): void {
       patchState(store, initialState);
     },
     fetchScores: rxMethod<void>(
       pipe(
+        tap(() => patchState(store, { isLoading: true, error: null })),
         switchMap(() => {
           return scoreboardService.fetchScores().pipe(
             tapResponse({
-              next: (availableScores) => patchState(store, { availableScores }),
-              error: (err) => {
-                console.error(err);
+              next: (availableScores) => patchState(store, { availableScores, isLoading: false }),
+              error: (err: Error) => {
+                patchState(store, {
+                  error: err?.message || 'Failed to fetch scores',
+                  isLoading: false,
+                });
               },
             })
           );
