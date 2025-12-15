@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject, combineLatest, map, tap, catchError, of } from 'rxjs';
+import { BehaviorSubject, combineLatest, map, tap, catchError, of, firstValueFrom } from 'rxjs';
 import { Score } from '../interfaces/score';
 import { SelectionSlot } from '../models/selection-slot';
 import { generateSelectionSlots } from '../utils/utils';
@@ -157,33 +157,10 @@ export class ScoreboardStateService {
     this._currentSelectedSlot$.next(slot);
   }
 
-  selectScore(value: Score): void {
+  async selectScore(value: Score): Promise<void> {
     const currentSlots = this._selectionSlots$.value;
     const currentSelectedSlot = this._currentSelectedSlot$.value;
-
-    // Determine available slot
-    let availableSlot: SelectionSlot | null = null;
-
-    // If a slot is currently selected, use it
-    if (currentSelectedSlot !== null) {
-      availableSlot = currentSelectedSlot;
-    } else {
-      let lastFilledSlotIndex = -1;
-      for (let i = currentSlots.length - 1; i >= 0; i--) {
-        if (currentSlots[i].score !== null) {
-          lastFilledSlotIndex = i;
-          break;
-        }
-      }
-
-      if (lastFilledSlotIndex === -1) {
-        availableSlot = currentSlots[0];
-      } else if (lastFilledSlotIndex < currentSlots.length - 1) {
-        availableSlot = currentSlots[lastFilledSlotIndex + 1];
-      } else {
-        availableSlot = currentSlots[currentSlots.length - 1];
-      }
-    }
+    let availableSlot = await firstValueFrom(this.availableSlot$);
 
     if (!availableSlot) return;
 
@@ -197,8 +174,7 @@ export class ScoreboardStateService {
     this._selectionSlots$.next(updatedSlots);
     this._lastFilledSlotIndex$.next(slotIndex);
 
-    // Clear the current selected slot after selection
-    this._currentSelectedSlot$.next(null);
+    this._currentSelectedSlot$.next(currentSelectedSlot?.nextSlot ?? null);
   }
 
   resetScoreSelections(): void {
