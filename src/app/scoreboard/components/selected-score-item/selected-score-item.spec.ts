@@ -21,4 +21,9 @@ describe('SelectedScoreItem', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
+
+  it('should have slot and isAvailable input signals', () => {
+    expect(component.slot).toBeDefined();
+    expect(component.isAvailable).toBeDefined();
+  });
 });

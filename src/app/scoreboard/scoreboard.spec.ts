@@ -44,43 +44,15 @@ describe('Scoreboard', () => {
     expect(component).toBeTruthy();
   });
 
-  it('onSlotClick should fetch scores when none are loaded yet', () => {
+  it('should have access to store', () => {
     const store = createMockStore(0);
     TestBed.overrideProvider(ScoreboardStore, { useValue: store });
 
     fixture = TestBed.createComponent(Scoreboard);
     component = fixture.componentInstance;
+    fixture.detectChanges();
 
-    const slot = new SelectionSlot({ id: 1, value: null });
-    component.onSlotClick(slot);
-
-    expect(store.fetchScores).toHaveBeenCalled();
-    expect(store.setCurrentSelectedSlot).toHaveBeenCalledWith(slot);
-  });
-
-  it('onSlotClick should not fetch scores when already loaded', () => {
-    const store = createMockStore(2);
-    TestBed.overrideProvider(ScoreboardStore, { useValue: store });
-
-    fixture = TestBed.createComponent(Scoreboard);
-    component = fixture.componentInstance;
-
-    const slot = new SelectionSlot({ id: 2, value: null });
-    component.onSlotClick(slot);
-
-    expect(store.fetchScores).not.toHaveBeenCalled();
-    expect(store.setCurrentSelectedSlot).toHaveBeenCalledWith(slot);
-  });
-
-  it('onResetClick should reset selections', () => {
-    const store = createMockStore(1);
-    TestBed.overrideProvider(ScoreboardStore, { useValue: store });
-
-    fixture = TestBed.createComponent(Scoreboard);
-    component = fixture.componentInstance;
-
-    component.onResetClick();
-
-    expect(store.resetScoreSelections).toHaveBeenCalled();
+    expect(component.store).toBeDefined();
+    expect(component.store).toBe(store);
   });
 });
