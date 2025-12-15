@@ -1,10 +1,10 @@
 <div
   class="w-auto h-auto flex flex-row justify-start items-start flex-wrap m-4 mt-6 border-4 border-gray-600 overflow-hidden"
 >
-  @for (score of availableScores(); track score?.id) {
+  @for (score of availableScores$ | async; track score?.id) {
   <div
     class="w-10 h-10 border-r-2 border-b-2 border-gray-400 flex justify-center items-center text-xl font-bold text-gray-800 cursor-pointer hover:bg-gray-200"
-    [class.bg-red-300]="availableSlot()?.score?.id === score?.id"
+    [class.bg-red-300]="(availableSlot$ | async)?.score?.id === score?.id"
     (click)="selectScore(score)"
   >
     {{ score.value }}

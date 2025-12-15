@@ -1,32 +1,55 @@
-import { Component, input, InputSignal, output, OutputEmitterRef } from '@angular/core';
+import { Component, DestroyRef, inject } from '@angular/core';
 import { SelectionSlot } from '../../models/selection-slot';
 import { SelectedScoreItem } from '../selected-score-item/selected-score-item';
+import { ScoreboardStateService } from '../../services/scoreboard-state.service';
+import { Observable, Subscription, takeUntil } from 'rxjs';
+import { AsyncPipe } from '@angular/common';
 
 @Component({
   selector: 'app-score-selections',
-  imports: [SelectedScoreItem],
+  imports: [SelectedScoreItem, AsyncPipe],
   templateUrl: './score-selections.html',
   styleUrl: './score-selections.scss',
 })
 export class ScoreSelections {
-  readonly selectionSlots: InputSignal<SelectionSlot[] | undefined> = input();
-  readonly availableSlot: InputSignal<SelectionSlot | null | undefined> = input();
-  readonly totalSelectedScores: InputSignal<number | undefined> = input();
+  readonly stateService = inject(ScoreboardStateService);
+  readonly availableSlot$: Observable<SelectionSlot | null> = this.stateService.availableSlot$;
+  readonly selectionSlots$: Observable<SelectionSlot[]> = this.stateService.selectionSlots$;
+  readonly totalSelectedScores$: Observable<number> = this.stateService.totalSelectedScores$;
 
-  readonly reset: OutputEmitterRef<void> = output<void>();
-  readonly slotClick: OutputEmitterRef<SelectionSlot> = output<SelectionSlot>();
+  readonly destroyRef = inject(DestroyRef);
 
-  /**
-   * Emits a slot click event to the parent component
-   */
-  onSlotClick(slot: SelectionSlot): void {
-    this.slotClick.emit(slot);
+  private _availableScoresSubscription: Subscription | null = null;
+
+  constructor() {
+    this.destroyRef.onDestroy(() => {
+      this._availableScoresSubscription?.unsubscribe();
+    });
   }
 
   /**
-   * Emits a reset event to the parent component
+   * Selects a score for the current available slot. If the current
+   * selected slot is not null, moves the current selected slot to the
+   * next available slot. If the available scores array is empty, does
+   * not update the current selected slot.
+   *
+   * @param slot The slot to select.
    */
-  onResetClick(): void {
-    this.reset.emit();
+  selectSlot(slot: SelectionSlot) {
+    this._availableScoresSubscription = this.stateService.availableScores$.subscribe((scores) => {
+      if (scores.length === 0) {
+        this.stateService.fetchScores();
+        this.stateService.setCurrentSelectedSlot(slot);
+      } else {
+        this.stateService.setCurrentSelectedSlot(slot);
+      }
+    });
+  }
+
+  /**
+   * Resets the scoreboard to its initial state.
+   */
+  reset() {
+    this.stateService.resetScoreSelections();
   }
 }

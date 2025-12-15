@@ -1,5 +1,13 @@
-import { Injectable, inject, effect, signal } from '@angular/core';
-import { BehaviorSubject, Observable, combineLatest, map, tap, switchMap, catchError, of } from 'rxjs';
+import { Injectable, inject } from '@angular/core';
+import {
+  BehaviorSubject,
+  combineLatest,
+  map,
+  tap,
+  catchError,
+  of,
+  distinctUntilChanged,
+} from 'rxjs';
 import { Score } from '../interfaces/score';
 import { SelectionSlot } from '../models/selection-slot';
 import { generateSelectionSlots } from '../utils/utils';
@@ -26,14 +34,22 @@ const scoreboardState: ScoreboardState = {
 @Injectable({ providedIn: 'root' })
 export class ScoreboardStateService {
   private readonly scoreboardService = inject(ScoreboardService);
-  
+
   // Private state subjects
-  private readonly _availableScores$ = new BehaviorSubject<Score[]>(scoreboardState.availableScores);
-  private readonly _selectionSlots$ = new BehaviorSubject<SelectionSlot[]>(scoreboardState.selectionSlots);
-  private readonly _currentSelectedSlot$ = new BehaviorSubject<SelectionSlot | null>(scoreboardState.currentSelectedSlot);
+  private readonly _availableScores$ = new BehaviorSubject<Score[]>(
+    scoreboardState.availableScores
+  );
+  private readonly _selectionSlots$ = new BehaviorSubject<SelectionSlot[]>(
+    scoreboardState.selectionSlots
+  );
+  private readonly _currentSelectedSlot$ = new BehaviorSubject<SelectionSlot | null>(
+    scoreboardState.currentSelectedSlot
+  );
   private readonly _isLoading$ = new BehaviorSubject<boolean>(scoreboardState.isLoading);
   private readonly _error$ = new BehaviorSubject<string | null>(scoreboardState.error);
-  private readonly _lastFilledSlotIndex$ = new BehaviorSubject<number>(scoreboardState.lastFilledSlotIndex);
+  private readonly _lastFilledSlotIndex$ = new BehaviorSubject<number>(
+    scoreboardState.lastFilledSlotIndex
+  );
 
   // Public observables
   readonly availableScores$ = this._availableScores$.asObservable();
@@ -45,10 +61,10 @@ export class ScoreboardStateService {
 
   // Computed observables
   readonly totalSelectedScores$ = this.selectionSlots$.pipe(
-    map(slots => 
+    map((slots) =>
       slots
-        .filter(slot => slot.score !== null)
-        .map(slot => slot.score?.value!)
+        .filter((slot) => slot.score !== null)
+        .map((slot) => slot.score?.value!)
         .reduce((a, b) => a + b, 0)
     )
   );
@@ -56,7 +72,7 @@ export class ScoreboardStateService {
   readonly availableSlot$ = combineLatest([
     this.selectionSlots$,
     this.availableScores$,
-    this.currentSelectedSlot$
+    this.currentSelectedSlot$,
   ]).pipe(
     map(([selectionSlots, availableScores, currentSelectedSlot]) => {
       if (availableScores.length === 0 || currentSelectedSlot !== null) {
@@ -82,32 +98,25 @@ export class ScoreboardStateService {
     })
   );
 
-  // State as signals for template usage
-  readonly availableScores = signal<Score[]>(scoreboardState.availableScores);
-  readonly selectionSlots = signal<SelectionSlot[]>(scoreboardState.selectionSlots);
-  readonly currentSelectedSlot = signal<SelectionSlot | null>(scoreboardState.currentSelectedSlot);
-  readonly isLoading = signal<boolean>(scoreboardState.isLoading);
-  readonly error = signal<string | null>(scoreboardState.error);
-  readonly lastFilledSlotIndex = signal<number>(scoreboardState.lastFilledSlotIndex);
-  readonly totalSelectedScores = signal<number>(0);
-  readonly availableSlot = signal<SelectionSlot | null>(null);
-
   constructor() {
     this.initializeState();
-    this.setupSignalSync();
     this.setupLocalStorage();
   }
 
   private initializeState(): void {
     const appState = localStorage.getItem('appState');
     if (appState) {
-      const savedState = JSON.parse(appState);
+      const savedState: ScoreboardState = JSON.parse(appState);
       this._availableScores$.next(savedState.availableScores || scoreboardState.availableScores);
       this._selectionSlots$.next(savedState.selectionSlots || scoreboardState.selectionSlots);
-      this._currentSelectedSlot$.next(savedState.currentSelectedSlot || scoreboardState.currentSelectedSlot);
+      this._currentSelectedSlot$.next(
+        savedState.currentSelectedSlot || scoreboardState.currentSelectedSlot
+      );
       this._isLoading$.next(savedState.isLoading || scoreboardState.isLoading);
       this._error$.next(savedState.error || scoreboardState.error);
-      this._lastFilledSlotIndex$.next(savedState.lastFilledSlotIndex || scoreboardState.lastFilledSlotIndex);
+      this._lastFilledSlotIndex$.next(
+        savedState.lastFilledSlotIndex || scoreboardState.lastFilledSlotIndex
+      );
     } else {
       // Initialize with default values
       this._availableScores$.next(scoreboardState.availableScores);
@@ -119,18 +128,6 @@ export class ScoreboardStateService {
     }
   }
 
-  private setupSignalSync(): void {
-    // Sync observables to signals synchronously
-    this._availableScores$.subscribe(value => this.availableScores.set(value));
-    this._selectionSlots$.subscribe(value => this.selectionSlots.set(value));
-    this._currentSelectedSlot$.subscribe(value => this.currentSelectedSlot.set(value));
-    this._isLoading$.subscribe(value => this.isLoading.set(value));
-    this._error$.subscribe(value => this.error.set(value));
-    this._lastFilledSlotIndex$.subscribe(value => this.lastFilledSlotIndex.set(value));
-    this.totalSelectedScores$.subscribe(value => this.totalSelectedScores.set(value));
-    this.availableSlot$.subscribe(value => this.availableSlot.set(value));
-  }
-
   private setupLocalStorage(): void {
     // Save state to localStorage whenever it changes
     combineLatest([
@@ -139,18 +136,27 @@ export class ScoreboardStateService {
       this.currentSelectedSlot$,
       this.isLoading$,
       this.error$,
-      this.lastFilledSlotIndex$
-    ]).subscribe(([availableScores, selectionSlots, currentSelectedSlot, isLoading, error, lastFilledSlotIndex]) => {
-      const state = {
+      this.lastFilledSlotIndex$,
+    ]).subscribe(
+      ([
         availableScores,
         selectionSlots,
         currentSelectedSlot,
         isLoading,
         error,
-        lastFilledSlotIndex
-      };
-      localStorage.setItem('appState', JSON.stringify(state));
-    });
+        lastFilledSlotIndex,
+      ]) => {
+        const state = {
+          availableScores,
+          selectionSlots,
+          currentSelectedSlot,
+          isLoading,
+          error,
+          lastFilledSlotIndex,
+        };
+        localStorage.setItem('appState', JSON.stringify(state));
+      }
+    );
   }
 
   setCurrentSelectedSlot(slot: SelectionSlot): void {
@@ -161,10 +167,10 @@ export class ScoreboardStateService {
     const currentSlots = this._selectionSlots$.value;
     const currentAvailableScores = this._availableScores$.value;
     const currentSelectedSlot = this._currentSelectedSlot$.value;
-    
+
     // Determine available slot
     let availableSlot: SelectionSlot | null = null;
-    
+
     if (currentAvailableScores.length === 0 || currentSelectedSlot !== null) {
       availableSlot = currentSelectedSlot;
     } else {
@@ -175,7 +181,7 @@ export class ScoreboardStateService {
           break;
         }
       }
-      
+
       if (lastFilledSlotIndex === undefined) {
         availableSlot = currentSlots[0];
       } else if (lastFilledSlotIndex !== currentSlots.length - 1) {
@@ -184,10 +190,10 @@ export class ScoreboardStateService {
         availableSlot = currentSlots[currentSlots.length - 1];
       }
     }
-    
+
     if (!availableSlot) return;
 
-    const slotIndex = currentSlots.findIndex(s => s.id === availableSlot.id);
+    const slotIndex = currentSlots.findIndex((s) => s.id === availableSlot.id);
     if (slotIndex === -1) return;
 
     const updatedSlots = [...currentSlots];
@@ -211,16 +217,19 @@ export class ScoreboardStateService {
     this._isLoading$.next(true);
     this._error$.next(null);
 
-    this.scoreboardService.fetchScores().pipe(
-      tap(availableScores => {
-        this._availableScores$.next(availableScores);
-        this._isLoading$.next(false);
-      }),
-      catchError((err: Error) => {
-        this._error$.next(err?.message || 'Failed to fetch scores');
-        this._isLoading$.next(false);
-        return of([]);
-      })
-    ).subscribe();
+    this.scoreboardService
+      .fetchScores()
+      .pipe(
+        tap((availableScores) => {
+          this._availableScores$.next(availableScores);
+          this._isLoading$.next(false);
+        }),
+        catchError((err: Error) => {
+          this._error$.next(err?.message || 'Failed to fetch scores');
+          this._isLoading$.next(false);
+          return of([]);
+        })
+      )
+      .subscribe();
   }
 }
