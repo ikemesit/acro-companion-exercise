@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { AvailableScores } from './available-scores';
 import { Score } from '../../interfaces/score';
+import { vi } from 'vitest';
 
 describe('AvailableScores', () => {
   let component: AvailableScores;
@@ -23,20 +24,20 @@ describe('AvailableScores', () => {
     expect(component).toBeTruthy();
   });
 
-  it('selectScore should emit scoreSelect when score is defined', () => {
+  it('selectScore should call stateService.selectScore when score is defined', () => {
     const score: Score = { id: 1, value: 10, label: 'Ten' };
-    const emitSpy = spyOn(component.scoreSelect, 'emit');
+    const selectScoreSpy = vi.spyOn(component.stateService, 'selectScore');
 
     component.selectScore(score);
 
-    expect(emitSpy).toHaveBeenCalledWith(score);
+    expect(selectScoreSpy).toHaveBeenCalledWith(score);
   });
 
-  it('selectScore should not emit when score is undefined', () => {
-    const emitSpy = spyOn(component.scoreSelect, 'emit');
+  it('selectScore should not call stateService.selectScore when score is undefined', () => {
+    const selectScoreSpy = vi.spyOn(component.stateService, 'selectScore');
 
     component.selectScore(undefined as any);
 
-    expect(emitSpy).not.toHaveBeenCalled();
+    expect(selectScoreSpy).not.toHaveBeenCalled();
   });
 });

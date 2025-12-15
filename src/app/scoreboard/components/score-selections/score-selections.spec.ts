@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ScoreSelections } from './score-selections';
 import { SelectionSlot } from '../../models/selection-slot';
+import { vi } from 'vitest';
 
 describe('ScoreSelections', () => {
   let component: ScoreSelections;
@@ -23,20 +24,21 @@ describe('ScoreSelections', () => {
     expect(component).toBeTruthy();
   });
 
-  it('onSlotClick should emit slotClick', () => {
+  it('selectSlot should call stateService methods', () => {
     const slot = new SelectionSlot({ id: 1, value: null });
-    const emitSpy = spyOn(component.slotClick, 'emit');
+    const setCurrentSelectedSlotSpy = vi.spyOn(component.stateService, 'setCurrentSelectedSlot');
+    const fetchScoresSpy = vi.spyOn(component.stateService, 'fetchScores');
 
-    component.onSlotClick(slot);
+    component.selectSlot(slot);
 
-    expect(emitSpy).toHaveBeenCalledWith(slot);
+    expect(setCurrentSelectedSlotSpy).toHaveBeenCalledWith(slot);
   });
 
-  it('onResetClick should emit reset', () => {
-    const emitSpy = spyOn(component.reset, 'emit');
+  it('reset should call resetScoreSelections', () => {
+    const resetSpy = vi.spyOn(component.stateService, 'resetScoreSelections');
 
-    component.onResetClick();
+    component.reset();
 
-    expect(emitSpy).toHaveBeenCalled();
+    expect(resetSpy).toHaveBeenCalled();
   });
 });

@@ -6,7 +6,6 @@ import {
   tap,
   catchError,
   of,
-  distinctUntilChanged,
 } from 'rxjs';
 import { Score } from '../interfaces/score';
 import { SelectionSlot } from '../models/selection-slot';
@@ -75,12 +74,13 @@ export class ScoreboardStateService {
     this.currentSelectedSlot$,
   ]).pipe(
     map(([selectionSlots, availableScores, currentSelectedSlot]) => {
-      if (availableScores.length === 0 || currentSelectedSlot !== null) {
+      // If a slot is currently selected, return it
+      if (currentSelectedSlot !== null) {
         return currentSelectedSlot;
       }
 
-      let lastFilledSlotIndex;
-
+      // Find the last filled slot
+      let lastFilledSlotIndex = -1;
       for (let i = selectionSlots.length - 1; i >= 0; i--) {
         if (selectionSlots[i].score !== null) {
           lastFilledSlotIndex = i;
@@ -88,11 +88,16 @@ export class ScoreboardStateService {
         }
       }
 
-      if (lastFilledSlotIndex === undefined) {
+      // If no slots are filled, return the first slot
+      if (lastFilledSlotIndex === -1) {
         return selectionSlots[0];
-      } else if (lastFilledSlotIndex !== selectionSlots.length - 1) {
-        return selectionSlots[lastFilledSlotIndex].nextSlot;
-      } else {
+      } 
+      // If not all slots are filled, return the next slot
+      else if (lastFilledSlotIndex < selectionSlots.length - 1) {
+        return selectionSlots[lastFilledSlotIndex + 1];
+      } 
+      // If all slots are filled, return the last slot
+      else {
         return selectionSlots[selectionSlots.length - 1];
       }
     })
@@ -165,16 +170,18 @@ export class ScoreboardStateService {
 
   selectScore(value: Score): void {
     const currentSlots = this._selectionSlots$.value;
-    const currentAvailableScores = this._availableScores$.value;
     const currentSelectedSlot = this._currentSelectedSlot$.value;
 
     // Determine available slot
     let availableSlot: SelectionSlot | null = null;
 
-    if (currentAvailableScores.length === 0 || currentSelectedSlot !== null) {
+    // If a slot is currently selected, use it
+    if (currentSelectedSlot !== null) {
       availableSlot = currentSelectedSlot;
-    } else {
-      let lastFilledSlotIndex;
+    } 
+    // Otherwise, find the next available slot
+    else {
+      let lastFilledSlotIndex = -1;
       for (let i = currentSlots.length - 1; i >= 0; i--) {
         if (currentSlots[i].score !== null) {
           lastFilledSlotIndex = i;
@@ -182,10 +189,10 @@ export class ScoreboardStateService {
         }
       }
 
-      if (lastFilledSlotIndex === undefined) {
+      if (lastFilledSlotIndex === -1) {
         availableSlot = currentSlots[0];
-      } else if (lastFilledSlotIndex !== currentSlots.length - 1) {
-        availableSlot = currentSlots[lastFilledSlotIndex].nextSlot;
+      } else if (lastFilledSlotIndex < currentSlots.length - 1) {
+        availableSlot = currentSlots[lastFilledSlotIndex + 1];
       } else {
         availableSlot = currentSlots[currentSlots.length - 1];
       }
@@ -201,7 +208,9 @@ export class ScoreboardStateService {
 
     this._selectionSlots$.next(updatedSlots);
     this._lastFilledSlotIndex$.next(slotIndex);
-    this._currentSelectedSlot$.next(availableSlot.nextSlot || null);
+    
+    // Clear the current selected slot after selection
+    this._currentSelectedSlot$.next(null);
   }
 
   resetScoreSelections(): void {
