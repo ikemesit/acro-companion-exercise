@@ -167,9 +167,7 @@ export class ScoreboardStateService {
     // If a slot is currently selected, use it
     if (currentSelectedSlot !== null) {
       availableSlot = currentSelectedSlot;
-    }
-    // Otherwise, find the next available slot
-    else {
+    } else {
       let lastFilledSlotIndex = -1;
       for (let i = currentSlots.length - 1; i >= 0; i--) {
         if (currentSlots[i].score !== null) {
@@ -189,7 +187,8 @@ export class ScoreboardStateService {
 
     if (!availableSlot) return;
 
-    const slotIndex = currentSlots.findIndex((s) => s.id === availableSlot.id);
+    const slotIndex = currentSlots.findIndex((s) => s.id === availableSlot?.id);
+
     if (slotIndex === -1) return;
 
     const updatedSlots = [...currentSlots];
