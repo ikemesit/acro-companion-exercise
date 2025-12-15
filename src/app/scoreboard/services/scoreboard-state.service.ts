@@ -1,12 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import {
-  BehaviorSubject,
-  combineLatest,
-  map,
-  tap,
-  catchError,
-  of,
-} from 'rxjs';
+import { BehaviorSubject, combineLatest, map, tap, catchError, of } from 'rxjs';
 import { Score } from '../interfaces/score';
 import { SelectionSlot } from '../models/selection-slot';
 import { generateSelectionSlots } from '../utils/utils';
@@ -68,12 +61,8 @@ export class ScoreboardStateService {
     )
   );
 
-  readonly availableSlot$ = combineLatest([
-    this.selectionSlots$,
-    this.availableScores$,
-    this.currentSelectedSlot$,
-  ]).pipe(
-    map(([selectionSlots, availableScores, currentSelectedSlot]) => {
+  readonly availableSlot$ = combineLatest([this.selectionSlots$, this.currentSelectedSlot$]).pipe(
+    map(([selectionSlots, currentSelectedSlot]) => {
       // If a slot is currently selected, return it
       if (currentSelectedSlot !== null) {
         return currentSelectedSlot;
@@ -91,11 +80,11 @@ export class ScoreboardStateService {
       // If no slots are filled, return the first slot
       if (lastFilledSlotIndex === -1) {
         return selectionSlots[0];
-      } 
+      }
       // If not all slots are filled, return the next slot
       else if (lastFilledSlotIndex < selectionSlots.length - 1) {
         return selectionSlots[lastFilledSlotIndex + 1];
-      } 
+      }
       // If all slots are filled, return the last slot
       else {
         return selectionSlots[selectionSlots.length - 1];
@@ -178,7 +167,7 @@ export class ScoreboardStateService {
     // If a slot is currently selected, use it
     if (currentSelectedSlot !== null) {
       availableSlot = currentSelectedSlot;
-    } 
+    }
     // Otherwise, find the next available slot
     else {
       let lastFilledSlotIndex = -1;
@@ -208,7 +197,7 @@ export class ScoreboardStateService {
 
     this._selectionSlots$.next(updatedSlots);
     this._lastFilledSlotIndex$.next(slotIndex);
-    
+
     // Clear the current selected slot after selection
     this._currentSelectedSlot$.next(null);
   }
