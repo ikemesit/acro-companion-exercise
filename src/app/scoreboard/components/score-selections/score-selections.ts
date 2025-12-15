@@ -1,6 +1,7 @@
-import { Component, input, InputSignal, output, OutputEmitterRef } from '@angular/core';
+import { Component, inject, input, InputSignal, output, OutputEmitterRef } from '@angular/core';
 import { SelectionSlot } from '../../models/selection-slot';
 import { SelectedScoreItem } from '../selected-score-item/selected-score-item';
+import { ScoreboardStore } from '../../stores/scoreboard.store';
 
 @Component({
   selector: 'app-score-selections',
@@ -9,24 +10,26 @@ import { SelectedScoreItem } from '../selected-score-item/selected-score-item';
   styleUrl: './score-selections.scss',
 })
 export class ScoreSelections {
-  readonly selectionSlots: InputSignal<SelectionSlot[] | undefined> = input();
-  readonly availableSlot: InputSignal<SelectionSlot | null | undefined> = input();
-  readonly totalSelectedScores: InputSignal<number | undefined> = input();
-
-  readonly reset: OutputEmitterRef<void> = output<void>();
-  readonly slotClick: OutputEmitterRef<SelectionSlot> = output<SelectionSlot>();
+  readonly store = inject(ScoreboardStore);
 
   /**
-   * Emits a slot click event to the parent component
+   * Called when a slot is clicked. If there are available scores, selects the clicked slot.
+   * If there are no available scores, fetches the scores and selects the clicked slot.
+   * @param slot The slot that was clicked.
    */
-  onSlotClick(slot: SelectionSlot): void {
-    this.slotClick.emit(slot);
+  selectSlot(slot: SelectionSlot): void {
+    if (this.store.availableScores().length === 0) {
+      this.store.fetchScores();
+      this.store.setCurrentSelectedSlot(slot);
+    } else {
+      this.store.setCurrentSelectedSlot(slot);
+    }
   }
 
   /**
-   * Emits a reset event to the parent component
+   * Resets the scoreboard to its initial state.
    */
-  onResetClick(): void {
-    this.reset.emit();
+  reset(): void {
+    this.store.resetScoreSelections();
   }
 }

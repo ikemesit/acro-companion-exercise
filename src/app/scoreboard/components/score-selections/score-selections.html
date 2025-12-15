@@ -1,21 +1,21 @@
 <div
   class="w-6xl h-40 flex flex-row justify-start items-start m-4 border-4 border-gray-600 overflow-hidden"
 >
-  @for (slot of selectionSlots(); track slot?.id){
+  @for (slot of store.selectionSlots(); track slot?.id){
   <app-selected-score-item
     [slot]="slot"
-    [isAvailable]="availableSlot()?.id === slot?.id"
-    (click)="onSlotClick(slot)"
+    [isAvailable]="store.availableSlot()?.id === slot?.id"
+    (click)="selectSlot(slot)"
   ></app-selected-score-item>
   }
 
   <div class="flex-1 h-40 flex flex-col justify-center items-center">
     <button
       class="rounded-lg bg-blue-400 text-white p-4 flex justify-center items-center"
-      (click)="onResetClick()"
+      (click)="reset()"
     >
       Reset
     </button>
-    <span class="text-lg font-bold text-gray-600">{{ totalSelectedScores() }}</span>
+    <span class="text-lg font-bold text-gray-600">{{ store.totalSelectedScores() }}</span>
   </div>
 </div>

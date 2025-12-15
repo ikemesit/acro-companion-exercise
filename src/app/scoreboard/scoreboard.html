@@ -1,15 +1,5 @@
-<app-score-selections
-  [selectionSlots]="store.selectionSlots()"
-  [availableSlot]="store.availableSlot()"
-  [totalSelectedScores]="store.totalSelectedScores()"
-  (slotClick)="onSlotClick($event)"
-  (reset)="onResetClick()"
-></app-score-selections>
+<app-score-selections></app-score-selections>
 
 @if (store.availableScores().length > 0) {
-<app-available-scores
-  [availableScores]="store.availableScores()"
-  [availableSlot]="store.availableSlot()"
-  (scoreSelect)="onScoreSelect($event)"
-></app-available-scores>
+<app-available-scores></app-available-scores>
 }
